@@ -39,6 +39,7 @@ def load_traj(file_name):
         atom_type.append(atom_holder)
         position.append(position_holder)
     position=np.float_(position)
+    box_bounds = np.float_(box_bounds)
     return timestep, num_atoms, box_bounds, atom_type,position
 
 '''
