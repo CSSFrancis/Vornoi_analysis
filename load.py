@@ -42,19 +42,3 @@ def load_traj(file_name):
     box_bounds = np.float_(box_bounds)
     atom_type = np.float_(atom_type)
     return timestep, num_atoms, box_bounds, atom_type,position
-
-'''
-for line in traj:
-    if "ITEM" in line:
-        line_id = line
-        holder = []
-        continue
-    while "ITEM" not in line:
-        holder.append(line.split(" "))
-        try:
-            line =next(traj)
-        except:
-            break
-    print(holder)
-   
-    print(line_id)'''
