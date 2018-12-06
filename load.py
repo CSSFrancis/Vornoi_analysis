@@ -42,3 +42,54 @@ def load_traj(file_name):
     box_bounds = np.float_(box_bounds)
     atom_type = np.float_(atom_type)
     return timestep, num_atoms, box_bounds, atom_type,position
+
+# There is probably a better way to do this. This just seaches for the heading and prints the values below that...
+def read_lammps_out(out_file, heading):
+    with open(out_file) as f:
+        thermo=[]
+        read = False
+        for line in f:
+            if "Loop time" in line:
+                read = False
+            if read:
+                # How many times can you cast one thing....
+                thermo.append(list(np.array(line.rstrip("\n").split(), dtype=float)))
+            if heading in line:
+                read = True
+    headings = heading.split()
+    print(headings)
+    thermo = [x for x in zip(*thermo)]
+    return thermo, headings
+
+
+def reduce(filename,lammps_out,datapoints):
+    '''
+    Notice that the timestep needs to be a multiple of the traj output...
+    :param filename:
+    :param lammps_out:
+    :param timestep:
+    :return:
+    '''
+    timestep, num_atoms, box_bounds, atom_type, position = load_traj(filename)
+    stable_len = 154
+    seperation = len(position[stable_len:])/datapoints
+    indexes = [int(stable_len+np.floor(i*seperation))for i in range(0,datapoints)]
+    indexes = indexes
+    p = position[indexes]
+    na = np.reshape(num_atoms,len(num_atoms))[indexes]
+    bb = box_bounds[indexes]
+    at = atom_type[indexes]
+    print(np.shape(timestep))
+    print(indexes)
+    ts = np.reshape(timestep,len(timestep))[indexes]
+    thermo, headings = read_lammps_out(lammps_out,"Step Temp Press TotEng PotEng Enthalpy")
+    ind=list(np.array(np.multiply(indexes,5),dtype=int)) #  pythp
+    print(ind)
+    temp = np.reshape(thermo[1], len(thermo[1]))[ind] # python is broken... it hates reslicing...
+    return p,na, bb, at, ts, temp
+
+
+'''
+reduce('/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj',
+       '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/out_1E12.lammps',100)
+ '''
