@@ -9,17 +9,33 @@ from tess import Container
 from load import load_traj
 
 # input position files...
-TwoE12Cooling = '/home/carter/Documents/Classes/760/FinalProject/2E12Cool/traj.lammpstrj'
-OneE12Cooling = '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj'
-t, n, bb, at, ap = load_traj(OneE12Cooling)
+TwoE12Cooling = '/Users/shaw/Shaw/MSE760/FinalProject/2E12Cool/traj.lammpstrj'
+OneE12Cooling = '/Users/shaw/Shaw/MSE760/FinalProject/1E12Cool/traj.lammpstrj'
+FiveE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/5E11Cool/traj.lammpstrj'
+TwoE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/2E11Cool_2/traj.lammpstrj'
 
-print(len(t))
+def get_radii(atom_list, radii):
+    radi_list = atom_list
+    for num,r in enumerate(radii):
+        radi_list[atom_list==num+1]=r
+    return radi_list
+
+t, n, bb, at, ap = load_traj(OneE12Cooling)
 Time = 744
+is_copper = at[Time] == 2
+print(len(t))
+
 limit = (bb[Time][0][1]-bb[Time][0][0],bb[Time][1][1]-bb[Time][1][0],bb[Time][2][1]-bb[Time][2][0])
 #must have the right limits from the bounding box....
-cntr = Container(ap[Time], limits=limit, periodic=True)
-is_copper = at[Time] == 2
-con = [c for is_c,c in zip(is_copper,cntr) if is_c]
+radii = get_radii(at[Time], [.23,.14])
+print(radii)
+cntr = Container(ap[Time], limits=limit, periodic=True, radii=radii)
+print([c.surface_area() for c in cntr])
+
+con = [c for is_c, c in zip(is_copper,cntr) if is_c]
+print(is_copper)
+print(con)
+
 def compute_freq(container):
     face_frequency = [v.face_freq_table() for v in container]
     l = [len(le) for le in face_frequency]
@@ -62,6 +78,6 @@ print(i[0])
 print(f)
 top_ten = sorted(range(len(f)), key=lambda i: f[i])[-10:]
 print(i[top_ten])
-print(np.sum(np.divide(f[top_ten], len(con))))
+print(np.divide(f[top_ten], len(con)))
 print(top_ten)
 determine_index_surface_area(i[top_ten],container=con)
