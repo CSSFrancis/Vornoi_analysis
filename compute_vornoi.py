@@ -36,7 +36,7 @@ def make_container(boundingbox, atom_type, atom_pos, radii=[0.23, 0.14], central
 def compute_freq(container,verbose=False):
     face_frequency = [v.face_freq_table() for v in container]
     l = [len(le) for le in face_frequency]
-    max_size = max(l)
+    max_size = 15       # much easier than trying to deal with trailing
     face_frequency_padded = [f+[0]*(max_size-le) for f,le in zip(face_frequency,l)]
     index,freq = np.unique(face_frequency_padded,axis=0, return_counts=True)
     top_ten = sorted(range(len(freq)), key=lambda i: freq[i])[-10:]
@@ -46,37 +46,46 @@ def compute_freq(container,verbose=False):
         [print(i,f)for i, f in zip(index[top_ten],top_ten_freq)]
         print("The percent sum is:", np.sum(top_ten_freq))
 
-    return index, freq, top_ten
+    return index, freq, index[top_ten], top_ten_freq
 
 
-def determine_surface_area(container):
+def determine_surface_area(container, verbose=False):
     surface_area = [v.surface_area() for v in container]
-    print(np.shape(surface_area))
-    print("The max is:", max(surface_area))
-    print("The min is:", min(surface_area))
-    print("The Average is:", np.average(surface_area))
-    return surface_area
+    if verbose:
+        print(np.shape(surface_area))
+        print("The max is:", max(surface_area))
+        print("The min is:", min(surface_area))
+        print("The Average is:", np.average(surface_area))
+    return surface_area, np.average(surface_area), np.std(surface_area)
 
 
-def determine_volume(container):
+def determine_volume(container,verbose=False):
     volume = [v.volume() for v in container]
-    print("The max is:", max(volume))
-    print("The min is:", min(volume))
-    print("The Average is:", np.average(volume))
-    return volume
+    if verbose:
+        print("The max is:", max(volume))
+        print("The min is:", min(volume))
+        print("The Average is:", np.average(volume))
+    return volume, np.average(volume),np.std(volume)
 
 
-def determine_index_surface_area(indices,container):
+def characterize_index(indices,container):
     containers = []
-
+    average_areas = []
+    area_stds = []
+    average_volumes = []
+    volume_stds = []
     for index in indices:
         index_container = [c for c in container if list(c.face_freq_table()) == list(np.trim_zeros(index, 'b'))]
         containers.append(index_container)
-
-
     for cont in containers:
-        determine_surface_area(cont)
-        determine_volume(cont)
+        _, average_area, area_std = determine_surface_area(cont)
+        _, average_volume, volume_std = determine_volume(cont)
+        average_areas.append(average_area)
+        area_stds.append(area_std)
+        average_volumes.append(average_volume)
+        volume_stds.append(volume_std)
+    return average_areas, area_stds, average_volumes, volume_stds
+
 
 #Testing
 '''
