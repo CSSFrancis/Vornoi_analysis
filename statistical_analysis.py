@@ -6,9 +6,12 @@ import timeit
 
 
 # maybe this would be better organized as a class.
+# need to do something to reduce the memory constraints...
+# Rethink how this is done..
 class Timeseries:
-    def __init__(self, traj_file,lammps_file):
-        pos, natom, bobo, atype, tstep, self.temp = reduce(traj_file, lammps_file, 10)
+    def __init__(self, traj_file,lammps_file, sampling=10):
+        self.sampling = sampling
+        pos, natom, bobo, atype, tstep, self.temp = reduce(traj_file, lammps_file, self.sampling)
         self.containers = [make_container(bb, at, ap) for bb, at, ap in zip(bobo, atype, pos)]
         self.all_average_area =[]
         self.all_area_std = []
@@ -27,11 +30,11 @@ class Timeseries:
             self.all_top_ten_freq.append(top_ten_freq)
         # note this is kind of weird implementation because it is unwrapped to help with the calculations.
         # it just helps by giving all the possible Vornoi indices an index... (I should maybe do that myself.
-        self.indexes, self.positions, self.frequency = np.unique(np.reshape(self.all_top_ten, (100, 15)), axis=0,
+        self.indexes, self.positions, self.frequency = np.unique(np.reshape(self.all_top_ten, (10*sampling, 15)), axis=0,
                                                                  return_inverse=True,return_counts=True)
 
     def get_top(self):
-        freq = np.reshape(self.all_top_ten_freq, (100)) # unwrap
+        freq = np.reshape(self.all_top_ten_freq, (10*self.sampling)) # unwrap
         resampled_freq = []
         for index in range(1, len(self.indexes)):
             where = np.where(index == self.positions)[0]  # once again the pythons weird arrays strike again...

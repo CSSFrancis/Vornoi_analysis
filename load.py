@@ -89,6 +89,7 @@ def reduce(filename,lammps_out,datapoints):
     return p,na, bb, at, ts, temp
 
 
+
 '''
 reduce('/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj',
        '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/out_1E12.lammps',100)
