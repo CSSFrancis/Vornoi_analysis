@@ -2,7 +2,7 @@
 
 from load import load_traj, reduce
 from compute_vornoi import *
-#from statistical_analysis import timeSeries
+from statistical_analysis import Timeseries
 
 def output_analysis(traj_file, themo_file, data_points, outfile):
     pos, num_atom, boundbox, atom_type, timestep, temp = reduce(traj_file,themo_file,data_points)
@@ -60,7 +60,7 @@ def read_analysis(input_file):
             elif "VolumeStd:" in line:
                 vstd.append(float(line.strip("\n").split(":")[1]))
             elif "VornoiIndicies:" in line:
-                vi.append([line.split()for line in line.strip("\n").split(":")[1].split(",")])
+                vi.append([line.split()for line in line.strip("\n").split(":")[1].split(",")][0:10])
             elif "VornoiFreq:" in line:
                 vf.append(list(np.array(line.strip("\n").split(":")[1].split())))
             elif"AverageAreas:"in line:
@@ -71,12 +71,13 @@ def read_analysis(input_file):
                 vas.append(list(np.array(line.strip("\n").split(":")[1].split())))
             elif "VolumeStds:"in line:
                 vstds.append(list(np.array(line.strip("\n").split(":")[1].split(),dtype=float)))
+        timeSeries = Timeseries(ts, temp, aa, astd, av, vstd, vi, vf,aas, astds,vas,vstds)
+
+    return timeSeries
 
 
-    return
 
-
-
-read_analysis("out.out")
+ts = read_analysis("out.out")
+ts.plot_top()
 #output_analysis('/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj',
 #               '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/out_1E12.lammps',100, 'out.out')
