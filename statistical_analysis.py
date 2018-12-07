@@ -17,139 +17,79 @@ class Timeseries:
         self.area_std = astd
         self.average_volume = av
         self.volume_std = vstd
-        self.all_average_area = aas
-        self.all_area_std = astds
-        self.all_average_volume = vas
-        self.all_volume_std = vstds
-        self.all_top_ten = vi
-        print(self.all_top_ten)
-        self.all_top_ten_freq = vf
+        # determining the unique vornoi indices and giving them an index...
+        self.indexes, self.positions = np.unique(np.reshape(vi, (10*self.sampling, 15)),
+                                                                 axis=0, return_inverse=True)
+        self.all_average_area, self.all_area_std = self.get_areas(aas, astds)
+        self.all_average_volume, self.all_volume_std = self.get_volumes(vas, vstds)
 
+        self.all_top_ten_freq = self.get_top(vf)
         # note this is kind of weird implementation because it is unwrapped to help with the calculations.
         # it just helps by giving all the possible Vornoi indices an index... (I should maybe do that myself.
-        self.indexes, self.positions, self.frequency = np.unique(np.reshape(self.all_top_ten, (10*self.sampling, 15)),
-                                                                 axis=0, return_inverse=True, return_counts=True)
-        print(np.shape(self.positions))
 
-    def get_top(self):
-        freq = np.reshape(self.all_top_ten_freq, (10*self.sampling)) # unwrap
-        resampled_freq = []
+    def get_index_stats(self, property):
+        unwrapped = np.reshape(property, (10 * self.sampling))  # unwrap
+        resampled = []
         for index in range(1, len(self.indexes)):
             where = np.where(index == self.positions)[0]  # once again the pythons weird arrays strike again...
-            is_in = np.floor_divide(where,10)
-            index_freq = []
+            is_in = np.floor_divide(where, 10)
+            index_prop = []
             count = 0
-            for i in range(1,self.sampling+1):
+            for i in range(0, self.sampling):
                 if i in is_in:
-                    index_freq.append(float(freq[where[count]]))
+                    index_prop.append(float(unwrapped[where[count]]))
                     count += 1
                 else:
-                    index_freq.append(0)
-            resampled_freq.append(index_freq)
+                    index_prop.append(0)
+            resampled.append(index_prop)
+        return resampled
+
+    def get_top(self,freq,plot=False):
+        resampled_freq =self.get_index_stats(freq)
+        print(np.sum(resampled_freq, axis =1))
         return resampled_freq
 
+    def get_areas(self, aa, astd, plot=False):
+        area = self.get_index_stats(aa)
+        astd = self.get_index_stats(astd)
+        if plot:
+            for a in area:
+                plt.scatter(self.temp, a)
+            plt.show()
+        return area, astd
+
+    def get_volumes(self,vas, vstds, plot=False):
+        volumes = self.get_index_stats(vas)
+        vstd = self.get_index_stats(vstds)
+        if plot:
+            for v in volumes:
+                plt.scatter(self.temp, v)
+            plt.show()
+        return volumes, vstd
+
     def plot_top(self):
-        rf = self.get_top()
-        print(rf)
-        print(self.temp)
-        for r in rf:
+        for r in self.all_top_ten_freq:
             plt.scatter(self.temp,r)
         plt.show()
 
+    def get_info_from_index(self, index):
+        # python is dumb as hell sometimes
+        pos = [num for num,ind in enumerate(self.indexes) if all(ind ==index )][0]
 
-def analyze_timeseries(traj_file,lammps_file):
-    pos, natom, bobo, atype, tstep, temp = reduce(traj_file,lammps_file, 10)
+        return self.all_average_area[pos], self.all_area_std[pos], self.all_average_volume[pos],\
+               self.all_volume_std[pos],self.all_top_ten_freq[pos]
+class sample:
+    def __init__(self,timeseries, quench_rates):
+        self.timeseries = timeseries  # list of timeseries objects
+        self.qenchrates = quench_rates
 
-    containers = [make_container(bb, at, ap) for bb, at, ap in zip(bobo, atype, pos)]
-    all_average_area =[]
-    all_area_std = []
-    all_average_volume = []
-    all_volume_std = []
-    for container in containers:
-        _, _, top_ten, top_ten_freq = compute_freq(container)
-        average_area, area_std, average_volume, volume_std = characterize_index(top_ten, container)
-        all_average_area.append(average_area)
-        all_area_std.append(area_std)
-        all_average_volume.append(average_volume)
-        all_volume_std.append(volume_std)
-    return
-
-
-'''class Timeseries:
-    def __init__(self, traj_file,lammps_file, sampling=10):
-        self.sampling = sampling
-        pos, natom, bobo, atype, tstep, self.temp = reduce(traj_file, lammps_file, self.sampling)
-        self.containers = [make_container(bb, at, ap) for bb, at, ap in zip(bobo, atype, pos)]
-        self.all_average_area =[]
-        self.all_area_std = []
-        self.all_average_volume = []
-        self.all_volume_std = []
-        self.all_top_ten = []
-        self.all_top_ten_freq =[]
-        for container in self.containers:
-            _, _, top_ten, top_ten_freq = compute_freq(container)
-            average_area, area_std, average_volume, volume_std = characterize_index(top_ten, container)
-            self.all_average_area.append(average_area)
-            self.all_area_std.append(area_std)
-            self.all_average_volume.append(average_volume)
-            self.all_volume_std.append(volume_std)
-            self.all_top_ten.append(top_ten)
-            self.all_top_ten_freq.append(top_ten_freq)
-        # note this is kind of weird implementation because it is unwrapped to help with the calculations.
-        # it just helps by giving all the possible Vornoi indices an index... (I should maybe do that myself.
-        self.indexes, self.positions, self.frequency = np.unique(np.reshape(self.all_top_ten, (10*sampling, 15)), axis=0,
-                                                                 return_inverse=True,return_counts=True)
-
-    def get_top(self):
-        freq = np.reshape(self.all_top_ten_freq, (10*self.sampling)) # unwrap
-        resampled_freq = []
-        for index in range(1, len(self.indexes)):
-            where = np.where(index == self.positions)[0]  # once again the pythons weird arrays strike again...
-            is_in = np.floor_divide(where,10)
-            index_freq = []
-            count = 0
-            for i in range(0,10):
-                if i in is_in:
-                    index_freq.append(freq[where[count]])
-                    count += 1
-                else:
-                    index_freq.append(0)
-            resampled_freq.append(index_freq)
-        return resampled_freq
-
-    def plot_top(self):
-        rf = self.get_top()
-        print(self.temp)
-        for r in rf:
-            plt.scatter(self.temp,r)
-        plt.show()
-
-
-def analyze_timeseries(traj_file,lammps_file):
-    pos, natom, bobo, atype, tstep, temp = reduce(traj_file,lammps_file, 10)
-
-    containers = [make_container(bb, at, ap) for bb, at, ap in zip(bobo, atype, pos)]
-    all_average_area =[]
-    all_area_std = []
-    all_average_volume = []
-    all_volume_std = []
-    for container in containers:
-        _, _, top_ten, top_ten_freq = compute_freq(container)
-        average_area, area_std, average_volume, volume_std = characterize_index(top_ten, container)
-        all_average_area.append(average_area)
-        all_area_std.append(area_std)
-        all_average_volume.append(average_volume)
-        all_volume_std.append(volume_std)
-    return
-'''
-
-'''
-    print(np.shape(containers))
-
-
-
-timeSeries  = Timeseries('/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj',
-                   '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/out_1E12.lammps')
-print(timeSeries.get_top())
-timeSeries.plot_top()
-'''
+    def compare_index(self, index):
+        avg_area,area_std, avg_vol, vol_std, freq =[],[],[],[],[]
+        for quench in self.timeseries:
+            holder= quench.get_info_from_index(index)
+            avg_area.append(holder[0])
+            area_std.append(holder[1])
+            avg_vol.append(holder[2])
+            vol_std.append(holder[3])
+            freq.append(holder[4])
+        return avg_area, area_std, avg_vol, vol_std, freq
