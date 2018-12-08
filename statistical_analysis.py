@@ -74,11 +74,10 @@ class Timeseries:
 
     def get_info_from_index(self, index):
         # python is dumb as hell sometimes
-        pos = [num for num,ind in enumerate(self.indexes) if all(ind ==index )][0]
-
+        pos = [num for num,ind in enumerate(self.indexes) if all(ind == index )][0]
         return self.all_average_area[pos], self.all_area_std[pos], self.all_average_volume[pos],\
                self.all_volume_std[pos],self.all_top_ten_freq[pos]
-class sample:
+class Sample:
     def __init__(self,timeseries, quench_rates):
         self.timeseries = timeseries  # list of timeseries objects
         self.qenchrates = quench_rates
@@ -86,7 +85,7 @@ class sample:
     def compare_index(self, index):
         avg_area,area_std, avg_vol, vol_std, freq =[],[],[],[],[]
         for quench in self.timeseries:
-            holder= quench.get_info_from_index(index)
+            holder = quench.get_info_from_index(index)
             avg_area.append(holder[0])
             area_std.append(holder[1])
             avg_vol.append(holder[2])
