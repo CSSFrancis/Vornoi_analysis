@@ -31,6 +31,29 @@ def make_container(boundingbox, atom_type, atom_pos, radii=[0.23, 0.14], central
     cntr = [c for is_c, c in zip(is_cental_atom, cntr) if is_c]
     return cntr
 
+def get_face_freq(container,edge_thresh):
+    vcell_list = [v.vertices() for v in container] # all of the indicies of a face
+    vlist_list = [v.face_vertices()for v in container] # of the positions of the indiceis
+    r_thresh2 = edge_thresh*edge_thresh
+    indexes = []
+    for vcell,vlist in zip(vcell_list,vlist_list):
+        edges = np.zeros(15)
+        for face in vlist:
+            n_edge = 0
+            for i,index in enumerate(face):
+                a = index
+                b = face[(i+1)%len(face)] # wrapping to complete face
+                dx = vcell[a][0] - vcell[b][0]
+                dy = vcell[a][1] - vcell[b][1]
+                dz = vcell[a][2] - vcell[b][2]
+                r2 = dx*dx+dy*dy+dz*dz
+                if r2 > r_thresh2:
+                    n_edge +=1
+            edges[n_edge-1] = edges[n_edge-1]+1
+        indexes.append(list(np.array(edges,dtype=int)))
+    print(indexes)
+    return indexes
+
 
 def compute_freq(container,verbose=False):
     face_frequency = [v.face_freq_table() for v in container]
@@ -85,16 +108,17 @@ def characterize_index(indices,container):
         volume_stds.append(volume_std)
     return average_areas, area_stds, average_volumes, volume_stds
 
-'''
+
 #Testing
 
-t, n, bb, at, ap = load_traj(OneE12Cooling)
+t, n, bb, at, ap = load_traj(TwoE12Cooling)
 f_time = len(t)-1
-cntr = extended_container(bb[f_time],at[f_time],ap[f_time])
-cntr.get_freq()
-cntr.get_index()
-cntr.get_volume()
-'''
+cntr = make_container(bb[f_time],at[f_time],ap[f_time])
+#get_freq()
+#get_index()
+#get_volume()
+get_face_freq(cntr,0.1)
+print([v.face_freq_table() for v in cntr])
 
 '''
 #Eventaully I should make extend the contianer class to just add functionality...
