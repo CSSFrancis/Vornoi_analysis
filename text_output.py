@@ -1,10 +1,15 @@
-# this program is designed to preform the analysis and output the data in a way
+'''
+This program is designed to preform the analysis and output the data in a way that is more easily read by Origin/excel
+Carter Francis
+csfrancis@wisc.edu
+'''
 
 from load import load_traj, reduce
 from compute_vornoi import *
 from statistical_analysis import Timeseries, Sample
 import matplotlib.pyplot as plt
-import csv
+
+
 def output_analysis(traj_file, themo_file, data_points, outfile):
     pos, num_atom, boundbox, atom_type, timestep, temp = reduce(traj_file, themo_file, data_points)
     with open(outfile, "w") as f:
@@ -135,6 +140,8 @@ def print_freq(out_file,sample):
         for t in ts:
             print(list(zip(*t.all_top_ten_freq))[99])
             print(t.all_top_ten_freq)
+'''
+# These are just the generalized input files from my computer...
 
 OneE12Cooling_lammps = '/home/carter/Documents/Classes/760/Organized/1E12Cooling_5000Atoms.lammps'
 OneE12Cooling_traj = '/home/carter/Documents/Classes/760/Organized/1E12Cooling_5000Atoms.lammpstrj'
@@ -153,18 +160,28 @@ TwoE11Cooling_lammps_Higher_Q ='/home/carter/Documents/Classes/760/Organized/2E1
 OneE11Cooling_lammps = '/home/carter/Documents/Classes/760/Organized/1E11Cooling_5000Atoms.lammps'
 OneE11Cooling_traj = '/home/carter/Documents/Classes/760/Organized/1E11Cooling_5000Atoms.lammpstrj'
 
+# for outputting analysis
+output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/TwoE11Cooling.out')
+output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/OneE11Cooling.out')
+output_analysis(FiveE11Cooling_traj, FiveE11Cooling_lammps, 100, 'OutputFiles/FiveE11Cooling.out')
+output_analysis(TwoE12Cooling_traj, TwoE12Cooling_lammps, 100, 'OutputFiles/TwoE12Cooling.out')
+output_analysis(OneE12Cooling_traj, OneE12Cooling_lammps, 100, 'OutputFiles/OneE12Cooling.out')
+output_analysis(TwoE11Cooling_traj_10000, TwoE11Cooling_lammps_10000, 100, 'OutputFiles/TwoE11Cooling_10000.out')
+output_analysis(TwoE11Cooling_traj_Higher_Q, TwoE11Cooling_lammps_Higher_Q, 100, 'OutputFiles/TwoE11Cooling_HQ.out')
 
+'''
+# list of timeseries outputs
 timeseries_list = ["OutputFiles/TwoE12Cooling.out", "OutputFiles/OneE12Cooling.out", "OutputFiles/FiveE11Cooling.out",
                    "OutputFiles/TwoE11Cooling.out","OutputFiles/TwoE11Cooling_10000.out",
                    "OutputFiles/TwoE11Cooling_HQ.out"]
 ts_list = []
 
-#avg_area, area_std, avg_vol, vol_std, freq = t_st.get_info_from_index(index=[0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-#print("The average area", avg_area)
 for t in timeseries_list:
     ts_list.append(read_analysis(t))
-s=Sample(ts_list, timeseries_list)
+s = Sample(ts_list, timeseries_list)  # creating a sample class which is basically multiple time series
 avg_area, area_std, avg_vol, vol_std, freq, temp = s.compare_index(index=[0, 0, 0, 0, 2, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+
+# out putting a bunch of files
 print_index_details([0, 0, 0, 0, 1, 10, 2, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
 print_index_details([0, 0, 0, 0, 2, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
 print_index_details([0, 0, 0, 0, 2, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
@@ -172,22 +189,7 @@ print_index_details([0, 0, 0, 0, 3, 6, 3, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
 print_density("density.csv",s)
 print_average_values("SystemVarible",s)
 print_freq("freq.csv",s)
-print(np.shape(temp))
 [plt.scatter(t, a) for a, t in zip(avg_area,temp)]
-print(temp[0])
 plt.xlim(2000, 0)
 plt.show()
-
-#ts = read_analysis("out.out")
-#ts.plot_top()
-#print(ts.all_volume_std)
-#ts.get_info_from_index([0,0,0,0,0,12,0,0,0,0,0,0,0,0,0])
-
-#output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/TwoE11Cooling.out')
-#output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/OneE11Cooling.out')
-#output_analysis(FiveE11Cooling_traj, FiveE11Cooling_lammps, 100, 'OutputFiles/FiveE11Cooling.out')
-#output_analysis(TwoE12Cooling_traj, TwoE12Cooling_lammps, 100, 'OutputFiles/TwoE12Cooling.out')
-#output_analysis(OneE12Cooling_traj, OneE12Cooling_lammps, 100, 'OutputFiles/OneE12Cooling.out')
-#output_analysis(TwoE11Cooling_traj_10000, TwoE11Cooling_lammps_10000, 100, 'OutputFiles/TwoE11Cooling_10000.out')
-#output_analysis(TwoE11Cooling_traj_Higher_Q, TwoE11Cooling_lammps_Higher_Q, 100, 'OutputFiles/TwoE11Cooling_HQ.out')
 

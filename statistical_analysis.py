@@ -1,13 +1,17 @@
+'''
+Classes which help define an Time series or quench as well as a class which defines multiple quenches
+Carter Francis
+csfrancis@wisc.edu
+'''
 from compute_vornoi import  *
 from load import load_traj, reduce
 import numpy as np
 import matplotlib.pyplot as plt
-import timeit
 
 
-# maybe this would be better organized as a class.
-# need to do something to reduce the memory constraints...
-# Rethink how this is done..
+
+# a Time series object is a combination of the information from a traj and lammps output file.  Has information about
+# the vornoi polyhedron, temperature, volume, density...
 class Timeseries:
     def __init__(self, ts, temp, aa, astd, av, vstd, vi, vf,aas, astds, vas, vstds,den):
         self.timestep = ts
@@ -79,8 +83,12 @@ class Timeseries:
         pos = [num for num,ind in enumerate(self.indexes) if all(ind == index )][0]
         return self.all_average_area[pos], self.all_area_std[pos], self.all_average_volume[pos],\
                self.all_volume_std[pos],self.all_top_ten_freq[pos],self.temp
+
+# a Sample is just a list of time series with added information about quench rates.. It might be overkill to have this
+# as a separate class but it works for now.
+
+
 class Sample:
-    # this name sucks for this class...
     def __init__(self,timeseries, quench_rates):
         self.timeseries = timeseries  # list of timeseries objects
         self.qenchrates = quench_rates

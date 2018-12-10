@@ -1,19 +1,14 @@
 '''
 Using tess created by https://github.com/wackywendell
+This program is built to add functionality to tess as a way to extract more information from vornoi polyhedron.
+Might end up trying to build an extension of tess' Cell and container classes which add more object oriented functions
 Carter Francis
 csfrancis@wisc.edu
 '''
+
 import numpy as np
 
 from tess import Container
-from load import load_traj
-
-import timeit
-# input position files...
-TwoE12Cooling = '/Users/shaw/Shaw/MSE760/FinalProject/2E12Cool/traj.lammpstrj'
-OneE12Cooling = '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj'
-FiveE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/5E11Cool/traj.lammpstrj'
-TwoE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/2E11Cool_2/traj.lammpstrj'
 
 def get_radii(atom_list, radii):
     radi_list = atom_list
@@ -114,8 +109,15 @@ def characterize_index(indices,container):
         volume_stds.append(volume_std)
     return average_areas, area_stds, average_volumes, volume_stds
 
-
+'''
 #Testing
+# input position files...
+TwoE12Cooling = '/Users/shaw/Shaw/MSE760/FinalProject/2E12Cool/traj.lammpstrj'
+OneE12Cooling = '/home/carter/Documents/Classes/760/FinalProject/1E12Cool/traj.lammpstrj'
+FiveE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/5E11Cool/traj.lammpstrj'
+TwoE11Cooling = '/Users/shaw/Shaw/MSE760/FinalProject760(ExternalCluster)/2E11Cool_2/traj.lammpstrj'
+'''
+
 '''
 t, n, bb, at, ap = load_traj(OneE12Cooling)
 f_time = len(t)-300
