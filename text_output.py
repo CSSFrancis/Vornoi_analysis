@@ -4,18 +4,20 @@ from load import load_traj, reduce
 from compute_vornoi import *
 from statistical_analysis import Timeseries, Sample
 import matplotlib.pyplot as plt
+import csv
 def output_analysis(traj_file, themo_file, data_points, outfile):
     pos, num_atom, boundbox, atom_type, timestep, temp = reduce(traj_file, themo_file, data_points)
     with open(outfile, "w") as f:
-        for bb, at, p,t,ts in zip(boundbox, atom_type, pos,temp, timestep):
+        for bb, at, p, t, ts, na in zip(boundbox, atom_type, pos,temp, timestep, num_atom):
             cont = make_container(bb, at, p)  # make sure to overwrite the container so that there isn't memory leakage
-
+            density = (float(na)/.6022)*(91.224*.36+63.546*.64)/(float((bb[0][1]-bb[0][0])**3))
             _, _, indices, top_ten_freq = compute_freq(cont)
             _, average_sarea, std_sarea = determine_surface_area(cont)
             _, average_vol, std_vol = determine_volume(cont)
             average_areas, area_stds, average_volumes, volume_stds = characterize_index(indices, cont)
             f.write("Timestep:" + ts+"\n")
             f.write("Temperature: %g\n" %t)
+            f.write("Density: %g\n" % density)
             f.write("AverageArea: %g\n" % average_sarea)
             f.write("AreaStd: %g\n" % std_sarea)
             f.write("AverageVolume: %g\n" %average_vol)
@@ -32,6 +34,7 @@ def output_analysis(traj_file, themo_file, data_points, outfile):
             write_list("AverageVolumes:", f, average_volumes)
             write_list("VolumeStds:", f, volume_stds)
 
+
     return
 def write_list(name, file, list):
     file.write(name)
@@ -44,7 +47,7 @@ def read_analysis(input_file):
     '''
     Returns a timeseries object which can be manipulated for further analysis.
     '''
-    ts, temp, aa, astd, av, vstd, vi, vf,aas, astds,vas,vstds = [], [], [], [], [], [], [], [], [], [], [], []
+    ts, temp, aa, astd, av, vstd, vi, vf,aas, astds,vas,vstds,den = [], [], [], [], [], [], [], [], [], [], [], [], []
 
     with open(input_file) as f:
         for line in f:
@@ -72,11 +75,66 @@ def read_analysis(input_file):
                 vas.append(list(np.array(line.strip("\n").split(":")[1].split())))
             elif "VolumeStds:"in line:
                 vstds.append(list(np.array(line.strip("\n").split(":")[1].split(),dtype=float)))
+            elif "Density:" in line:
+                den.append(float(line.strip("\n").split(":")[1]))
         vi = [[[int(x) for x in y] for y in v]for v in vi]
-        timeSeries = Timeseries(ts, temp, aa, astd, av, vstd, vi, vf,aas, astds,vas,vstds)
+        timeSeries = Timeseries(ts, temp, aa, astd, av, vstd, vi, vf,aas, astds,vas,vstds,den)
 
     return timeSeries
 
+def print_index_details(index,out_file,sample):
+    avg_area, area_std, avg_vol, vol_std, freq, temp = sample.compare_index(index=index)
+    with open(str(index)+out_file+"Average_Area.csv", "w") as f:
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*avg_area)), delimiter = ',')
+    with open(str(index)+out_file + "Area_std.csv", "w") as f:
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*area_std)), delimiter=',')
+    with open(str(index)+out_file + "Average_Vol.csv", "w") as f:
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*avg_vol)), delimiter=',')
+    with open(str(index)+out_file + "Vol_std.csv", "w") as f:
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*vol_std)), delimiter=',')
+
+
+def print_density(outfile,sample):
+    ts = sample.timeseries
+    with open(outfile, "w") as f:
+        density = [t.density for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*density)), delimiter=',')
+
+
+def print_average_values(outfile,sample):
+    ts = sample.timeseries
+    with open(outfile+"Average_Area.csv", "w") as f:
+        aa = [t.surface_area for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*aa)), delimiter=',')
+    with open(outfile + "Area_STD.csv", "w") as f:
+        ast = [t.area_std for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*ast)), delimiter=',')
+    with open(outfile + "Average_vol.csv", "w") as f:
+        av = [t.average_volume for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*av)), delimiter=',')
+    with open(outfile + "vol_STD.csv", "w") as f:
+        vst = [t.volume_std for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*vst)), delimiter=',')
+    with open(outfile + "temp.csv", "w") as f:
+        vst = [t.temp for t in ts]
+        f.write("2E12Cooling,1E12Cooling,5E11Cooling,2E11Cooling,2E11Cooling_1000,2E11Cooling_HQ\n")
+        np.savetxt(f, list(zip(*vst)), delimiter=',')
+
+def print_freq(out_file,sample):
+    ts =sample.timeseries
+    with open(out_file,"w") as f:
+        for t in ts:
+            print(list(zip(*t.all_top_ten_freq))[99])
+            print(t.all_top_ten_freq)
 
 OneE12Cooling_lammps = '/home/carter/Documents/Classes/760/Organized/1E12Cooling_5000Atoms.lammps'
 OneE12Cooling_traj = '/home/carter/Documents/Classes/760/Organized/1E12Cooling_5000Atoms.lammpstrj'
@@ -88,23 +146,48 @@ FiveE11Cooling_lammps_2 ='/home/carter/Documents/Classes/760/Organized/5E11Cooli
 FiveE11Cooling_traj_2 ='/home/carter/Documents/Classes/760/Organized/5E11Cooling_5000Atoms_1.lammpstrj'
 TwoE11Cooling_lammps ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_5000Atoms.lammps'
 TwoE11Cooling_traj ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_5000Atoms.lammpstrj'
+TwoE11Cooling_lammps_10000 ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_10000Atoms.lammps'
+TwoE11Cooling_traj_10000 ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_10000Atoms.lammpstrj'
 TwoE11Cooling_traj_Higher_Q ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_10000AtomsHigherQ.lammpstrj'
 TwoE11Cooling_lammps_Higher_Q ='/home/carter/Documents/Classes/760/Organized/2E11Cooling_10000AtomsHigherQ.lammps'
+OneE11Cooling_lammps = '/home/carter/Documents/Classes/760/Organized/1E11Cooling_5000Atoms.lammps'
+OneE11Cooling_traj = '/home/carter/Documents/Classes/760/Organized/1E11Cooling_5000Atoms.lammpstrj'
 
-timeseries_list = ["TwoE12Cooling.out", "OneE12Cooling.out", "FiveE11Cooling.out", "TwoE11Cooling_HQ.out"]
+
+timeseries_list = ["OutputFiles/TwoE12Cooling.out", "OutputFiles/OneE12Cooling.out", "OutputFiles/FiveE11Cooling.out",
+                   "OutputFiles/TwoE11Cooling.out","OutputFiles/TwoE11Cooling_10000.out",
+                   "OutputFiles/TwoE11Cooling_HQ.out"]
 ts_list = []
-#t_st = read_analysis("TwoE11Cooling_HQ.out")
+
 #avg_area, area_std, avg_vol, vol_std, freq = t_st.get_info_from_index(index=[0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 #print("The average area", avg_area)
 for t in timeseries_list:
     ts_list.append(read_analysis(t))
 s=Sample(ts_list, timeseries_list)
-avg_area, area_std, avg_vol, vol_std, freq = s.compare_index(index=[0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-[plt.scatter(range(0,100),a) for a in vol_std]
+avg_area, area_std, avg_vol, vol_std, freq, temp = s.compare_index(index=[0, 0, 0, 0, 2, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+print_index_details([0, 0, 0, 0, 1, 10, 2, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
+print_index_details([0, 0, 0, 0, 2, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
+print_index_details([0, 0, 0, 0, 2, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
+print_index_details([0, 0, 0, 0, 3, 6, 3, 0, 0, 0, 0, 0, 0, 0, 0],'out',s)
+print_density("density.csv",s)
+print_average_values("SystemVarible",s)
+print_freq("freq.csv",s)
+print(np.shape(temp))
+[plt.scatter(t, a) for a, t in zip(avg_area,temp)]
+print(temp[0])
+plt.xlim(2000, 0)
 plt.show()
 
 #ts = read_analysis("out.out")
 #ts.plot_top()
 #print(ts.all_volume_std)
 #ts.get_info_from_index([0,0,0,0,0,12,0,0,0,0,0,0,0,0,0])
-#output_analysis(FiveE11Cooling_traj_2,FiveE11Cooling_lammps_2, 100, 'FiveE11Cooling_2.out')
+
+#output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/TwoE11Cooling.out')
+#output_analysis(TwoE11Cooling_traj, TwoE11Cooling_lammps, 100, 'OutputFiles/OneE11Cooling.out')
+#output_analysis(FiveE11Cooling_traj, FiveE11Cooling_lammps, 100, 'OutputFiles/FiveE11Cooling.out')
+#output_analysis(TwoE12Cooling_traj, TwoE12Cooling_lammps, 100, 'OutputFiles/TwoE12Cooling.out')
+#output_analysis(OneE12Cooling_traj, OneE12Cooling_lammps, 100, 'OutputFiles/OneE12Cooling.out')
+#output_analysis(TwoE11Cooling_traj_10000, TwoE11Cooling_lammps_10000, 100, 'OutputFiles/TwoE11Cooling_10000.out')
+#output_analysis(TwoE11Cooling_traj_Higher_Q, TwoE11Cooling_lammps_Higher_Q, 100, 'OutputFiles/TwoE11Cooling_HQ.out')
+

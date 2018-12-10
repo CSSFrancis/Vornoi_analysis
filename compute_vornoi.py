@@ -54,7 +54,7 @@ def get_face_freq(container,edge_thresh=0,face_threshold=0):
                     #print(r2)
                     if r2 > r_thresh2:
                         n_edge +=1
-                edges[n_edge-1] = edges[n_edge-1]+1
+                edges[n_edge] = edges[n_edge]+1
         indexes.append(list(np.array(edges,dtype=int)))
     #print(indexes)
     index,freq, top_top, top_ten_freq = compute_freq(indexes,verbose=True)

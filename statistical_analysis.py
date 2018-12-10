@@ -9,7 +9,7 @@ import timeit
 # need to do something to reduce the memory constraints...
 # Rethink how this is done..
 class Timeseries:
-    def __init__(self, ts, temp, aa, astd, av, vstd, vi, vf,aas, astds, vas, vstds):
+    def __init__(self, ts, temp, aa, astd, av, vstd, vi, vf,aas, astds, vas, vstds,den):
         self.timestep = ts
         self.sampling = 100
         self.temp = temp
@@ -17,6 +17,7 @@ class Timeseries:
         self.area_std = astd
         self.average_volume = av
         self.volume_std = vstd
+        self.density = den
         # determining the unique vornoi indices and giving them an index...
         self.indexes, self.positions = np.unique(np.reshape(vi, (10*self.sampling, 15)),
                                                                  axis=0, return_inverse=True)
@@ -74,16 +75,18 @@ class Timeseries:
 
     def get_info_from_index(self, index):
         # python is dumb as hell sometimes
+        print(self.indexes)
         pos = [num for num,ind in enumerate(self.indexes) if all(ind == index )][0]
         return self.all_average_area[pos], self.all_area_std[pos], self.all_average_volume[pos],\
-               self.all_volume_std[pos],self.all_top_ten_freq[pos]
+               self.all_volume_std[pos],self.all_top_ten_freq[pos],self.temp
 class Sample:
+    # this name sucks for this class...
     def __init__(self,timeseries, quench_rates):
         self.timeseries = timeseries  # list of timeseries objects
         self.qenchrates = quench_rates
 
     def compare_index(self, index):
-        avg_area,area_std, avg_vol, vol_std, freq =[],[],[],[],[]
+        avg_area,area_std, avg_vol, vol_std, freq, temp = [],[],[],[],[],[]
         for quench in self.timeseries:
             holder = quench.get_info_from_index(index)
             avg_area.append(holder[0])
@@ -91,4 +94,5 @@ class Sample:
             avg_vol.append(holder[2])
             vol_std.append(holder[3])
             freq.append(holder[4])
-        return avg_area, area_std, avg_vol, vol_std, freq
+            temp.append(holder[5])
+        return avg_area, area_std, avg_vol, vol_std, freq, temp
